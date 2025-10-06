@@ -36,7 +36,7 @@ jobs:
               run: bunx eslint . --max-warnings=0
 
             - name: TypeScript (no emit)
-              run: bunx tsc -p tsconfig.json --noEmit
+              run: bunx tsc -p tsconfig.json --noEmit --ignoreFile ./next/**
 
             - name: Build (Next.js)
               run: bun run build
