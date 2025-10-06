@@ -15,8 +15,8 @@ export function Hero() {
           Interactive, neighborhood-level heat risk combining temperature, vegetation, and social vulnerability into one score.
         </p>
         <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-          <Link href="/signup"><Button size="lg">Create account</Button></Link>
-          <Link href="/login"><Button variant="secondary" size="lg">Log in</Button></Link>
+          <Link href="/signup" legacyBehavior><Button size="lg">Create account</Button></Link>
+          <Link href="/login" legacyBehavior><Button variant="secondary" size="lg">Log in</Button></Link>
         </div>
         <Separator className="mt-10" />
         <div className="mt-6 grid w-full grid-cols-2 gap-6 sm:grid-cols-4">
@@ -27,7 +27,7 @@ export function Hero() {
         </div>
       </div>
     </section>
-  )
+  );
 }
 
 function StatItem({ label, value }: { label: string; value: string }) {

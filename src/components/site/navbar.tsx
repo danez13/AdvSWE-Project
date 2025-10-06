@@ -25,7 +25,7 @@ export function Navbar() {
               <Link href="/login" className="px-3 py-2 text-sm">Log in</Link>
             </NavigationMenuItem>
             <NavigationMenuItem>
-              <Link href="/signup">
+              <Link href="/signup" legacyBehavior>
                 <Button size="sm">Get started</Button>
               </Link>
             </NavigationMenuItem>
@@ -33,5 +33,5 @@ export function Navbar() {
         </NavigationMenu>
       </div>
     </header>
-  )
+  );
 }
