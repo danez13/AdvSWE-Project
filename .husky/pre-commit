@@ -1,0 +1,8 @@
+#!/usr/bin/env sh
+set -euo pipefail
+
+# format & restage
+bun run format
+git add -A
+
+echo "✓ pre-commit checks passed."
