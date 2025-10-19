@@ -32,14 +32,12 @@ export const makeFetchRequest = async (
 ) => {
 	const url = fetchConfig.baseUrl + endpoint;
 
-	// Build headers robustly
 	const headers = new Headers(
 		fetchOptions.headers as HeadersInit | undefined
 	);
 	if (!headers.has('Content-Type'))
 		headers.set('Content-Type', 'application/json');
 
-	// Auth
 	const token = JSON.parse(
 		localStorage.getItem('authData') || '{}'
 	) as AuthData;
