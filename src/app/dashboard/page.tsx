@@ -3,8 +3,8 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Sidebar } from '@/components/ui/sidebar';
-import { useMe, useLogout } from '@/hooks/useUsers';
+import { Sidebar } from '@/components/site/sidebar';
+import { useMe } from '@/hooks/useUsers';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,7 +12,6 @@ import { Separator } from '@/components/ui/separator';
 
 export default function HomePage() {
 	const { data, isLoading } = useMe();
-	const logout = useLogout();
 	const router = useRouter();
 	const user = data?.user;
 
@@ -79,12 +78,7 @@ export default function HomePage() {
 	return (
 		<div className="flex min-h-screen">
 			<div className="hidden lg:block">
-				<Sidebar
-					onLogout={() => {
-						logout();
-						router.push('/');
-					}}
-				/>
+				<Sidebar />
 			</div>
 			<div className="flex w-full flex-col">
 				<header className="flex items-center justify-between border-b px-4 py-3">

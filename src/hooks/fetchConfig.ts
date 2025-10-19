@@ -1,12 +1,8 @@
-import { QueryClient } from '@tanstack/react-query';
-
 export interface AuthData {
 	token: string;
 	email?: string;
 	name?: string;
 }
-
-export const queryClient = new QueryClient();
 
 export const fetchConfig = {
 	baseUrl: 'http://localhost:8080/',
