@@ -136,7 +136,7 @@ export default function HomePage() {
 							<CardTitle>Quick links</CardTitle>
 						</CardHeader>
 						<CardContent className="grid gap-2">
-							<Link href="/map">
+							<Link href="/map" legacyBehavior>
 								<Button
 									variant="secondary"
 									className="justify-start"
@@ -144,7 +144,7 @@ export default function HomePage() {
 									Open map
 								</Button>
 							</Link>
-							<Link href="/alerts">
+							<Link href="/alerts" legacyBehavior>
 								<Button
 									variant="secondary"
 									className="justify-start"
@@ -152,7 +152,7 @@ export default function HomePage() {
 									Manage alerts
 								</Button>
 							</Link>
-							<Link href="/settings">
+							<Link href="/settings" legacyBehavior>
 								<Button
 									variant="secondary"
 									className="justify-start"
