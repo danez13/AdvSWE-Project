@@ -35,4 +35,6 @@ export function useRegionLayer(map: Map | null, level: number) {
 			map.removeLayer(vectorLayer);
 		};
 	}, [map, level]);
+
+	return { layer };
 }
