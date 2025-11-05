@@ -3,13 +3,14 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useCallback } from 'react';
-import { LayoutDashboard, LogOut } from 'lucide-react';
+import { LayoutDashboard, LogOut, Map } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useLogout } from '@/hooks/useUsers';
 
 const navItems = [
 	{ href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+	{ href: '/map', label: 'Map', icon: Map },
 ];
 
 export function Sidebar() {
