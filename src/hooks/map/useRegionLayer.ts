@@ -28,17 +28,6 @@ export function useRegionLayer(map: Map | null, level: number) {
 			}),
 		});
 
-		// 👇 Add this listener to debug
-		vectorLayer.getSource()?.on('change', () => {
-			const source = vectorLayer.getSource();
-			if (source?.getState() === 'ready') {
-				console.log(
-					`✅ Loaded level ${level}, features:`,
-					source.getFeatures().length
-				);
-			}
-		});
-
 		map.addLayer(vectorLayer);
 		setLayer(vectorLayer);
 
