@@ -1,5 +1,4 @@
-// useRegionLayer.ts
-import { useEffect, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import VectorLayer from 'ol/layer/Vector';
 import VectorSource from 'ol/source/Vector';
 import GeoJSON from 'ol/format/GeoJSON';
@@ -7,13 +6,17 @@ import { Style, Fill, Stroke } from 'ol/style';
 import type Map from 'ol/Map';
 
 export function useRegionLayer(map: Map | null, level: number) {
-	const [layer, setLayer] = useState<VectorLayer<VectorSource> | null>(null);
+	const layerRef = useRef<VectorLayer<VectorSource> | null>(null);
 
 	useEffect(() => {
 		if (!map) return;
 
-		if (layer) map.removeLayer(layer);
+		// Remove previous vector layer if it exists
+		if (layerRef.current) {
+			map.removeLayer(layerRef.current);
+		}
 
+		// Create a new vector layer for the selected level
 		const vectorLayer = new VectorLayer({
 			source: new VectorSource({
 				url: `/data/gadm41_USA_${level}.json`,
@@ -28,13 +31,16 @@ export function useRegionLayer(map: Map | null, level: number) {
 			}),
 		});
 
+		// Add the layer to the map
 		map.addLayer(vectorLayer);
-		setLayer(vectorLayer);
+		layerRef.current = vectorLayer;
 
+		// Clean up when component unmounts or level changes
 		return () => {
-			map.removeLayer(vectorLayer);
+			if (layerRef.current) {
+				map.removeLayer(layerRef.current);
+				layerRef.current = null;
+			}
 		};
 	}, [map, level]);
-
-	return { layer };
 }
