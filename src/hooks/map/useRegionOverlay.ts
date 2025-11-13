@@ -39,7 +39,7 @@ export function useRegionOverlay({
 			fill: new Fill({ color: 'rgba(37,99,235,0.35)' }),
 		});
 
-		const handleClick = (evt: MapBrowserEvent<UIEvent>) => {
+		const handleClick = (evt: MapBrowserEvent<PointerEvent>) => {
 			const feature = map.forEachFeatureAtPixel(evt.pixel, (f, layer) => {
 				if (layer === regionLayer) return f as Feature<Geometry>;
 				return undefined;
