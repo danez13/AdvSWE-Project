@@ -39,11 +39,15 @@ export function useRegionOverlay({
 			fill: new Fill({ color: 'rgba(37,99,235,0.35)' }),
 		});
 
-		const handleClick = (evt: MapBrowserEvent<PointerEvent>) => {
-			const feature = map.forEachFeatureAtPixel(evt.pixel, (f, layer) => {
-				if (layer === regionLayer) return f as Feature<Geometry>;
-				return undefined;
-			});
+		const handleClick = (evt: unknown) => {
+			const mapEvent = evt as MapBrowserEvent<PointerEvent>;
+			const feature = map.forEachFeatureAtPixel(
+				mapEvent.pixel,
+				(f, layer) => {
+					if (layer === regionLayer) return f as Feature<Geometry>;
+					return undefined;
+				}
+			);
 
 			// Reset previous highlight
 			if (selectedFeatureRef.current) {
@@ -54,7 +58,7 @@ export function useRegionOverlay({
 				feature.setStyle(highlightStyle);
 				selectedFeatureRef.current = feature;
 				setSelectedFeature(feature);
-				overlay.setPosition(evt.coordinate);
+				overlay.setPosition(mapEvent.coordinate);
 			} else {
 				selectedFeatureRef.current = null;
 				setSelectedFeature(null);
@@ -62,13 +66,13 @@ export function useRegionOverlay({
 			}
 		};
 
-		map.on('click', handleClick);
+		map.on(['click'], handleClick);
 
 		return () => {
-			map.un('click', handleClick);
+			map.un(['click'], handleClick);
 			map.removeOverlay(overlay);
 		};
-	}, [map, regionLayer, overlayElement]); // ✅ perfectly fine now
+	}, [map, regionLayer, overlayElement]);
 
 	const closeOverlay = () => {
 		if (selectedFeatureRef.current) {
