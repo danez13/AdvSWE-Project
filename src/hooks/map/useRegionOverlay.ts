@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Overlay from 'ol/Overlay';
 import Map from 'ol/Map';
 import { Style, Fill, Stroke } from 'ol/style';
@@ -22,23 +22,23 @@ export function useRegionOverlay({
 	const [selectedFeature, setSelectedFeature] =
 		useState<Feature<Geometry> | null>(null);
 
+	// ✅ keep mutable ref to avoid ESLint warnings and stale closures
+	const selectedFeatureRef = useRef<Feature<Geometry> | null>(null);
+
 	useEffect(() => {
 		if (!map || !overlayElement) return;
 
-		// Create overlay
 		const overlay = new Overlay({
 			element: overlayElement,
 			autoPan: { animation: { duration: 250 } },
 		});
 		map.addOverlay(overlay);
 
-		// Highlight style
 		const highlightStyle = new Style({
 			stroke: new Stroke({ color: '#1e40af', width: 2 }),
 			fill: new Fill({ color: 'rgba(37,99,235,0.35)' }),
 		});
 
-		// Click handler
 		const handleClick = (evt: MapBrowserEvent<UIEvent>) => {
 			const feature = map.forEachFeatureAtPixel(evt.pixel, (f, layer) => {
 				if (layer === regionLayer) return f as Feature<Geometry>;
@@ -46,15 +46,17 @@ export function useRegionOverlay({
 			});
 
 			// Reset previous highlight
-			if (selectedFeature) {
-				selectedFeature.setStyle(undefined);
+			if (selectedFeatureRef.current) {
+				selectedFeatureRef.current.setStyle(undefined);
 			}
 
 			if (feature) {
 				feature.setStyle(highlightStyle);
+				selectedFeatureRef.current = feature;
 				setSelectedFeature(feature);
 				overlay.setPosition(evt.coordinate);
 			} else {
+				selectedFeatureRef.current = null;
 				setSelectedFeature(null);
 				overlay.setPosition(undefined);
 			}
@@ -66,10 +68,13 @@ export function useRegionOverlay({
 			map.un('click', handleClick);
 			map.removeOverlay(overlay);
 		};
-	}, [map, regionLayer, overlayElement]); // ✅ removed selectedFeature dependency
+	}, [map, regionLayer, overlayElement]); // ✅ perfectly fine now
 
 	const closeOverlay = () => {
-		if (selectedFeature) selectedFeature.setStyle(undefined);
+		if (selectedFeatureRef.current) {
+			selectedFeatureRef.current.setStyle(undefined);
+			selectedFeatureRef.current = null;
+		}
 		setSelectedFeature(null);
 	};
 
