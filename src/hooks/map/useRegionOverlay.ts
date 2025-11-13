@@ -1,14 +1,16 @@
 import { useEffect, useState } from 'react';
 import Overlay from 'ol/Overlay';
+import Map from 'ol/Map';
 import { Style, Fill, Stroke } from 'ol/style';
-import type Map from 'ol/Map';
 import type Feature from 'ol/Feature';
+import type Geometry from 'ol/geom/Geometry';
 import type VectorLayer from 'ol/layer/Vector';
 import type VectorSource from 'ol/source/Vector';
+import type MapBrowserEvent from 'ol/MapBrowserEvent';
 
-interface UseRegionOverlayOptions {
+export interface UseRegionOverlayOptions {
 	map: Map | null;
-	regionLayer: VectorLayer<VectorSource> | null;
+	regionLayer: VectorLayer<VectorSource<Feature<Geometry>>> | null;
 	overlayElement: HTMLElement | null;
 }
 
@@ -17,9 +19,8 @@ export function useRegionOverlay({
 	regionLayer,
 	overlayElement,
 }: UseRegionOverlayOptions) {
-	const [selectedFeature, setSelectedFeature] = useState<Feature | null>(
-		null
-	);
+	const [selectedFeature, setSelectedFeature] =
+		useState<Feature<Geometry> | null>(null);
 
 	useEffect(() => {
 		if (!map || !overlayElement) return;
@@ -27,27 +28,24 @@ export function useRegionOverlay({
 		// Create overlay
 		const overlay = new Overlay({
 			element: overlayElement,
-			autoPan: true,
+			autoPan: { animation: { duration: 250 } },
 		});
 		map.addOverlay(overlay);
 
+		// Highlight style
 		const highlightStyle = new Style({
 			stroke: new Stroke({ color: '#1e40af', width: 2 }),
 			fill: new Fill({ color: 'rgba(37,99,235,0.35)' }),
 		});
 
-		const handleClick = (evt: any) => {
-			const raw = map.forEachFeatureAtPixel(evt.pixel, (f, layer) => {
-				if (layer === regionLayer) return f;
+		// Click handler
+		const handleClick = (evt: MapBrowserEvent<UIEvent>) => {
+			const feature = map.forEachFeatureAtPixel(evt.pixel, (f, layer) => {
+				if (layer === regionLayer) return f as Feature<Geometry>;
+				return undefined;
 			});
 
-			// Narrow FeatureLike to ol/Feature only if it provides setStyle
-			const feature =
-				raw && typeof (raw as any).setStyle === 'function'
-					? (raw as unknown as Feature)
-					: null;
-
-			// remove highlight from previously selected
+			// Reset previous highlight
 			if (selectedFeature) {
 				selectedFeature.setStyle(undefined);
 			}
@@ -68,16 +66,12 @@ export function useRegionOverlay({
 			map.un('click', handleClick);
 			map.removeOverlay(overlay);
 		};
-	}, [map, regionLayer, overlayElement]);
+	}, [map, regionLayer, overlayElement]); // ✅ removed selectedFeature dependency
 
-	// helper to close popup manually
 	const closeOverlay = () => {
 		if (selectedFeature) selectedFeature.setStyle(undefined);
 		setSelectedFeature(null);
 	};
 
-	return {
-		selectedFeature,
-		closeOverlay,
-	};
+	return { selectedFeature, closeOverlay };
 }
