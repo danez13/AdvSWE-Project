@@ -2,8 +2,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Map } from '@maptiler/sdk';
+import { Map, MapMouseEvent } from '@maptiler/sdk';
 import { Popup } from '@maptiler/sdk';
+import { Feature, Geometry } from 'geojson';
 
 interface UseRegionPopupProps {
 	map: Map | null;
@@ -11,8 +12,8 @@ interface UseRegionPopupProps {
 }
 
 interface RegionFeature {
-	properties: Record<string, any>;
-	geometry: any;
+	properties: Feature['properties'];
+	geometry: Geometry;
 }
 
 export function useRegionOverlay({ map, level }: UseRegionPopupProps) {
@@ -33,19 +34,20 @@ export function useRegionOverlay({ map, level }: UseRegionPopupProps) {
 		setPopup(newPopup);
 
 		// Handle click on regions
-		const handleClick = (e: any) => {
+		const handleClick = (e: MapMouseEvent & { features?: Feature[] }) => {
 			if (!e.features || e.features.length === 0) return;
 
 			const feature = e.features[0];
+
 			setSelectedFeature({
-				properties: feature.properties,
+				properties: feature.properties ?? {},
 				geometry: feature.geometry,
 			});
 
 			// Get region name
 			const name =
-				feature.properties.NAME_1 ||
-				feature.properties.NAME_0 ||
+				feature.properties?.NAME_1 ||
+				feature.properties?.NAME_0 ||
 				'Unknown Region';
 
 			// Create popup HTML
