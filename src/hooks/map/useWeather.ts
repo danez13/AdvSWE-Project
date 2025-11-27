@@ -12,13 +12,15 @@ import {
 
 export type WeatherLayerType = 'temperature' | 'wind' | 'precipitation';
 
+type WeatherLayer = TemperatureLayer | WindLayer | PrecipitationLayer;
+
 interface UseWeatherLayerProps {
 	map: Map | null;
 	activeLayer: WeatherLayerType | null;
 }
 
 interface WeatherLayerInfo {
-	layer: any;
+	layer: WeatherLayer;
 	startDate: Date | null;
 	endDate: Date | null;
 	currentTime: number | null;
@@ -35,8 +37,8 @@ export function useWeatherLayer({ map, activeLayer }: UseWeatherLayerProps) {
 	const [pointerValue, setPointerValue] = useState<string>('');
 
 	// Create weather layer
-	const createWeatherLayer = (type: WeatherLayerType) => {
-		let weatherLayer: any;
+	const createWeatherLayer = (type: WeatherLayerType): WeatherLayer => {
+		let weatherLayer: WeatherLayer;
 
 		switch (type) {
 			case 'temperature':
@@ -97,12 +99,22 @@ export function useWeatherLayer({ map, activeLayer }: UseWeatherLayerProps) {
 
 	// Manage active layer
 	useEffect(() => {
-		if (!map) return;
+		if (!map) {
+			console.log('Weather layer: waiting for map...');
+			return;
+		}
+
+		console.log('Weather layer effect running, active layer:', activeLayer);
 
 		// Hide all layers
 		Object.keys(weatherLayersRef.current).forEach((key) => {
-			if (map.getLayer(key)) {
-				map.setLayoutProperty(key, 'visibility', 'none');
+			try {
+				if (map.getLayer(key)) {
+					map.setLayoutProperty(key, 'visibility', 'none');
+					console.log(`Hid layer: ${key}`);
+				}
+			} catch (error) {
+				console.error(`Error hiding layer ${key}:`, error);
 			}
 		});
 
@@ -113,31 +125,48 @@ export function useWeatherLayer({ map, activeLayer }: UseWeatherLayerProps) {
 
 		// If no layer selected, return
 		if (!activeLayer) {
+			console.log('No active layer selected');
 			setCurrentTimeDate(null);
 			setTimeRange(null);
 			return;
 		}
 
+		console.log(`Attempting to show ${activeLayer} layer...`);
+
 		// Create layer if it doesn't exist
 		if (!weatherLayersRef.current[activeLayer]) {
-			const weatherLayer = createWeatherLayer(activeLayer);
-			map.addLayer(weatherLayer);
-		} else {
-			// Show existing layer
-			map.setLayoutProperty(activeLayer, 'visibility', 'visible');
-			const layerInfo = weatherLayersRef.current[activeLayer];
-			if (layerInfo.currentTime !== null) {
-				layerInfo.layer.setAnimationTime(layerInfo.currentTime);
+			console.log(`Creating new ${activeLayer} layer...`);
+			try {
+				const weatherLayer = createWeatherLayer(activeLayer);
+				console.log('Weather layer created:', weatherLayer);
+
+				// Add to map
+				map.addLayer(weatherLayer);
+				console.log(`${activeLayer} layer added to map`);
+			} catch (error) {
+				console.error(`Error creating ${activeLayer} layer:`, error);
 			}
-			setCurrentTimeDate(layerInfo.layer.getAnimationTimeDate());
-			if (layerInfo.startDate && layerInfo.endDate) {
-				setTimeRange({
-					min: +layerInfo.startDate,
-					max: +layerInfo.endDate,
-				});
+		} else {
+			console.log(`${activeLayer} layer already exists, showing it...`);
+			// Show existing layer
+			try {
+				map.setLayoutProperty(activeLayer, 'visibility', 'visible');
+				const layerInfo = weatherLayersRef.current[activeLayer];
+				if (layerInfo.currentTime !== null) {
+					layerInfo.layer.setAnimationTime(layerInfo.currentTime);
+				}
+				setCurrentTimeDate(layerInfo.layer.getAnimationTimeDate());
+				if (layerInfo.startDate && layerInfo.endDate) {
+					setTimeRange({
+						min: +layerInfo.startDate,
+						max: +layerInfo.endDate,
+					});
+				}
+			} catch (error) {
+				console.error(`Error showing ${activeLayer} layer:`, error);
 			}
 		}
-	}, [map, activeLayer]);
+	}, [map, activeLayer, isPlaying]);
 
 	// Play/pause animation
 	const togglePlayPause = () => {
@@ -183,13 +212,13 @@ export function useWeatherLayer({ map, activeLayer }: UseWeatherLayerProps) {
 		let formattedValue = '';
 		switch (activeLayer) {
 			case 'temperature':
-				formattedValue = `${value.value.toFixed(1)}°C`;
+				formattedValue = `${(value as { value: number }).value.toFixed(1)}°C`;
 				break;
 			case 'wind':
-				formattedValue = `${value.speedMetersPerSecond.toFixed(1)} m/s`;
+				formattedValue = `${(value as { speedMetersPerSecond: number }).speedMetersPerSecond.toFixed(1)} m/s`;
 				break;
 			case 'precipitation':
-				formattedValue = `${value.value.toFixed(1)} mm`;
+				formattedValue = `${(value as { value: number }).value.toFixed(1)} mm`;
 				break;
 		}
 		setPointerValue(formattedValue);
