@@ -1,86 +1,89 @@
-import { useEffect, useRef, useState } from 'react';
-import Overlay from 'ol/Overlay';
-import Map from 'ol/Map';
-import { Style, Fill, Stroke } from 'ol/style';
-import type Feature from 'ol/Feature';
-import type Geometry from 'ol/geom/Geometry';
-import type VectorLayer from 'ol/layer/Vector';
-import type VectorSource from 'ol/source/Vector';
-import type MapBrowserEvent from 'ol/MapBrowserEvent';
+// hooks/map/useRegionPopup.ts
+'use client';
 
-export interface UseRegionOverlayOptions {
+import { useEffect, useState } from 'react';
+import { Map, MapMouseEvent } from '@maptiler/sdk';
+import { Popup } from '@maptiler/sdk';
+import { Feature, Geometry } from 'geojson';
+
+interface UseRegionPopupProps {
 	map: Map | null;
-	regionLayer: VectorLayer<VectorSource<Feature<Geometry>>> | null;
-	overlayElement: HTMLElement | null;
+	level: number;
 }
 
-export function useRegionOverlay({
-	map,
-	regionLayer,
-	overlayElement,
-}: UseRegionOverlayOptions) {
-	const [selectedFeature, setSelectedFeature] =
-		useState<Feature<Geometry> | null>(null);
+interface RegionFeature {
+	properties: Feature['properties'];
+	geometry: Geometry;
+}
 
-	// ✅ keep mutable ref to avoid ESLint warnings and stale closures
-	const selectedFeatureRef = useRef<Feature<Geometry> | null>(null);
+export function useRegionOverlay({ map, level }: UseRegionPopupProps) {
+	const [selectedFeature, setSelectedFeature] =
+		useState<RegionFeature | null>(null);
+	const [popup, setPopup] = useState<Popup | null>(null);
 
 	useEffect(() => {
-		if (!map || !overlayElement) return;
+		if (!map) return;
 
-		const overlay = new Overlay({
-			element: overlayElement,
-			autoPan: { animation: { duration: 250 } },
+		const layerId = `regions-layer-${level}`;
+
+		// Create popup
+		const newPopup = new Popup({
+			closeButton: true,
+			closeOnClick: false,
 		});
-		map.addOverlay(overlay);
+		setPopup(newPopup);
 
-		const highlightStyle = new Style({
-			stroke: new Stroke({ color: '#1e40af', width: 2 }),
-			fill: new Fill({ color: 'rgba(37,99,235,0.35)' }),
-		});
+		// Handle click on regions
+		const handleClick = (e: MapMouseEvent & { features?: Feature[] }) => {
+			if (!e.features || e.features.length === 0) return;
 
-		const handleClick = (evt: unknown) => {
-			const mapEvent = evt as MapBrowserEvent<PointerEvent>;
-			const feature = map.forEachFeatureAtPixel(
-				mapEvent.pixel,
-				(f, layer) => {
-					if (layer === regionLayer) return f as Feature<Geometry>;
-					return undefined;
-				}
-			);
+			const feature = e.features[0];
 
-			// Reset previous highlight
-			if (selectedFeatureRef.current) {
-				selectedFeatureRef.current.setStyle(undefined);
-			}
+			setSelectedFeature({
+				properties: feature.properties ?? {},
+				geometry: feature.geometry,
+			});
 
-			if (feature) {
-				feature.setStyle(highlightStyle);
-				selectedFeatureRef.current = feature;
-				setSelectedFeature(feature);
-				overlay.setPosition(mapEvent.coordinate);
-			} else {
-				selectedFeatureRef.current = null;
-				setSelectedFeature(null);
-				overlay.setPosition(undefined);
-			}
+			// Get region name
+			const name =
+				feature.properties?.NAME_1 ||
+				feature.properties?.NAME_0 ||
+				'Unknown Region';
+
+			// Create popup HTML
+			const popupHTML = `
+				<div style="padding: 8px; min-width: 150px;">
+					<h3 style="margin: 0 0 8px 0; font-weight: bold; font-size: 14px;">
+						${name}
+					</h3>
+					<p style="margin: 0; font-size: 12px; color: #666;">
+						Level ${level}
+					</p>
+				</div>
+			`;
+
+			newPopup.setLngLat(e.lngLat).setHTML(popupHTML).addTo(map);
 		};
 
-		map.on(['click'], handleClick);
+		map.on('click', layerId, handleClick);
 
 		return () => {
-			map.un(['click'], handleClick);
-			map.removeOverlay(overlay);
+			map.off('click', layerId, handleClick);
+			if (newPopup) {
+				newPopup.remove();
+			}
 		};
-	}, [map, regionLayer, overlayElement]);
+	}, [map, level]);
 
-	const closeOverlay = () => {
-		if (selectedFeatureRef.current) {
-			selectedFeatureRef.current.setStyle(undefined);
-			selectedFeatureRef.current = null;
+	const closePopup = () => {
+		if (popup) {
+			popup.remove();
 		}
 		setSelectedFeature(null);
 	};
 
-	return { selectedFeature, closeOverlay };
+	return {
+		selectedFeature,
+		closePopup,
+	};
 }

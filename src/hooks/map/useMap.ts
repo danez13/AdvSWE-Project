@@ -1,34 +1,48 @@
-// components/site/map/hooks/useMap.ts
+// hooks/map/useMap.ts
+'use client';
+
 import { useEffect, useRef, useState } from 'react';
-import Map from 'ol/Map';
-import View from 'ol/View';
-import TileLayer from 'ol/layer/Tile';
-import OSM from 'ol/source/OSM';
-import { fromLonLat } from 'ol/proj';
+import { Map, MapStyle, config } from '@maptiler/sdk';
+import '@maptiler/sdk/dist/maptiler-sdk.css';
+
+config.apiKey = 'll5WkrO164th37ugLobs';
 
 export function useMap() {
-	const mapRef = useRef<HTMLDivElement | null>(null);
+	const mapContainer = useRef<HTMLDivElement | null>(null);
+	const mapRef = useRef<Map | null>(null);
 	const [map, setMap] = useState<Map | null>(null);
 
 	useEffect(() => {
-		if (!mapRef.current) return;
+		if (!mapContainer.current) return;
+		if (mapRef.current) return; // Prevent reinitializing
 
-		const baseLayer = new TileLayer({ source: new OSM() });
+		console.log('Initializing MapTiler map...');
+
 		const mapInstance = new Map({
-			target: mapRef.current,
-			layers: [baseLayer],
-			view: new View({
-				center: fromLonLat([0, 0]),
-				zoom: 2,
-			}),
+			container: mapContainer.current,
+			style: MapStyle.STREETS, // Try STREETS first to ensure something shows
+			center: [-98.5795, 39.8283], // US center
+			zoom: 4,
 		});
 
-		setMap(mapInstance);
+		mapRef.current = mapInstance;
+
+		// Wait for map to load
+		mapInstance.on('load', () => {
+			console.log('Map loaded successfully');
+			setMap(mapInstance);
+		});
+
+		mapInstance.on('error', (e) => {
+			console.error('Map error:', e);
+		});
 
 		return () => {
-			mapInstance.setTarget(undefined);
+			console.log('Cleaning up map...');
+			mapInstance.remove();
+			mapRef.current = null;
 		};
 	}, []);
 
-	return { map, mapRef };
+	return { map, mapContainer };
 }
